@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arvex Network</title>
+    <link rel="icon" href="https://www.image2url.com/r2/default/images/1777323425517-753f9d7a-8b62-4c5a-9798-03d4d0ac122e.png">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        canvas#grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            position: fixed;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 6px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(12px);
+        }
+        .sidebar .clock-box {
+            padding: 6px 10px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .sidebar .clock {
+            font-size: 12px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: rgba(255,255,255,0.85);
+        }
+        .sidebar .date {
+            font-size: 9px;
+            color: rgba(255,255,255,0.3);
+            margin-top: 1px;
+        }
+        .nav-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: rgba(255,255,255,0.35);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            position: relative;
+        }
+        .nav-btn:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05); }
+        .nav-btn.active {
+            color: rgba(255,255,255,0.95);
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.12);
+        }
+        .nav-btn svg { width: 20px; height: 20px; }
+        .nav-btn .tip {
+            position: absolute;
+            right: calc(100% + 10px);
+            white-space: nowrap;
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.8);
+            background: rgba(20,20,20,0.9);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 4px 10px;
+            border-radius: 6px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateX(4px);
+            transition: all 0.15s;
+        }
+        .nav-btn:hover .tip { opacity: 1; transform: translateX(0); }
+
+        /* ── HOME PAGE ── */
+        .page {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            display: none;
+        }
+        .page.active { display: flex; }
+
+        #homePage {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .home-brand {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .home-brand img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+        }
+        .home-brand h1 {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.9);
+        }
+        .home-brand .ver {
+            font-size: 9px;
+            color: rgba(255,255,255,0.2);
+            margin-top: 2px;
+        }
+
+        .projects-label {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 20px;
+        }
+        .projects-label::after {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 2px;
+            background: rgba(255,255,255,0.3);
+            margin: 10px auto 0;
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 440px;
+        }
+        .project-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.2s;
+        }
+        .project-card:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.12);
+            transform: translateY(-2px);
+        }
+        .project-card .icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .project-card .icon-box span {
+            font-size: 15px;
+            font-weight: 900;
+            color: rgba(255,255,255,0.7);
+        }
+        .project-card .icon-box svg { width: 18px; height: 18px; fill: rgba(255,255,255,0.7); }
+        .project-card .card-info .name { font-size: 13px; font-weight: 700; }
+        .project-card .card-info .sub { font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 2px; }
+
+        .discord-hint {
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.04);
+            font-size: 10px;
+            color: rgba(255,255,255,0.2);
+        }
+        .discord-hint .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+        }
+
+        /* ── IFRAME PAGES ── */
+        #arcadePage iframe,
+        #mediaPage iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* ── CHAT PAGE ── */
+        #chatPage {
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .coming-soon-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .coming-soon-icon svg { width: 28px; height: 28px; color: rgba(255,255,255,0.1); }
+        .coming-soon-title { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.2); }
+        .coming-soon-sub { font-size: 11px; color: rgba(255,255,255,0.1); }
+
+        /* ── SETTINGS PAGE ── */
+        #settingsPage {
+            overflow-y: auto;
+        }
+        .settings-inner {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .settings-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.08); }
+        .back-btn svg { width: 14px; height: 14px; }
+        .settings-header h2 {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .settings-card {
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .settings-card .card-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            margin-bottom: 12px;
+        }
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+        }
+        .setting-row .label-text { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.6); }
+        .setting-row .sub-text { font-size: 10px; color: rgba(255,255,255,0.2); margin-top: 2px; }
+
+        /* Toggle switch */
+        .toggle {
+            width: 36px;
+            height: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+        .toggle.on {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.2);
+        }
+        .toggle .knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            transition: all 0.15s;
+        }
+        .toggle.on .knob {
+            left: 19px;
+            background: rgba(255,255,255,0.9);
+        }
+
+        /* Action button */
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.02);
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: left;
+            transition: all 0.15s;
+            margin-top: 4px;
+        }
+        .action-btn:hover { background: rgba(255,255,255,0.05); }
+        .action-btn .ab-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .action-btn .ab-icon svg { width: 10px; height: 10px; color: rgba(255,255,255,0.4); }
+        .action-btn .ab-sub { font-size: 10px; color: rgba(255,255,255,0.2); margin-top: 1px; }
+
+        /* Tab cloak buttons */
+        .cloak-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .cloak-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.02);
+            color: rgba(255,255,255,0.35);
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+        .cloak-btn:hover { background: rgba(255,255,255,0.04); }
+        .cloak-btn.active {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.9);
+        }
+        .cloak-btn img { width: 12px; height: 12px; }
+
+        .reset-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(239,68,68,0.08);
+            background: rgba(239,68,68,0.03);
+            color: rgba(239,68,68,0.5);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.15s;
+            margin-top: 4px;
+        }
+        .reset-btn:hover { background: rgba(239,68,68,0.06); }
+        .reset-btn .ab-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            background: rgba(239,68,68,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .reset-btn .ab-icon svg { width: 10px; height: 10px; color: rgba(239,68,68,0.5); }
+
+        .settings-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.04);
+            margin-bottom: 80px;
+        }
+        .settings-footer span { font-size: 10px; color: rgba(255,255,255,0.15); }
+
+        @media (max-width: 480px) {
+            .sidebar { right: 6px; padding: 6px 4px; gap: 4px; }
+            .nav-btn { width: 36px; height: 36px; }
+            .nav-btn svg { width: 17px; height: 17px; }
+            .project-grid { grid-template-columns: 1fr; max-width: 300px; }
+            .home-brand { top: 16px; left: 16px; padding: 8px 12px; }
+            .home-brand img { width: 36px; height: 36px; }
+            .home-brand h1 { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="grid"></canvas>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <div class="clock-box">
+        <div class="clock" id="clock">12:00:00</div>
+        <div class="date" id="date">Mon Jan 1</div>
+    </div>
+    <button class="nav-btn active" data-page="home" onclick="goPage('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="tip">Home</span>
+    </button>
+    <button class="nav-btn" data-page="arcade" onclick="goPage('arcade')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/></svg>
+        <span class="tip">Arcade</span>
+    </button>
+    <button class="nav-btn" data-page="media" onclick="goPage('media')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></svg>
+        <span class="tip">Media</span>
+    </button>
+    <button class="nav-btn" data-page="chat" onclick="goPage('chat')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <span class="tip">Chat</span>
+    </button>
+    <button class="nav-btn" data-page="settings" onclick="goPage('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span class="tip">Settings</span>
+    </button>
+</div>
+
+<!-- HOME -->
+<div class="page active" id="homePage">
+    <div class="home-brand">
+        <img src="https://www.image2url.com/r2/default/images/1777323425517-753f9d7a-8b62-4c5a-9798-03d4d0ac122e.png" alt="Arvex">
+        <div>
+            <h1>Arvex Network</h1>
+            <div class="ver">v1.0</div>
+        </div>
+    </div>
+    <div class="projects-label">Projects</div>
+    <div class="project-grid">
+        <a class="project-card" href="https://drakozixl.github.io/sightw/" target="_blank">
+            <div class="icon-box"><span>S</span></div>
+            <div class="card-info"><div class="name">Sight.w</div><div class="sub">drakozixl.github.io/sightw</div></div>
+        </a>
+        <a class="project-card" href="https://drakozixl.github.io/chinatown.w/" target="_blank">
+            <div class="icon-box"><span>C</span></div>
+            <div class="card-info"><div class="name">Chinatown</div><div class="sub">drakozixl.github.io/chinatown</div></div>
+        </a>
+        <a class="project-card" href="https://sites.google.com/view/bgs-cool/home?authuser=0" target="_blank">
+            <div class="icon-box"><span>B</span></div>
+            <div class="card-info"><div class="name">BGS</div><div class="sub">sites.google.com/bgs-cool</div></div>
+        </a>
+        <a class="project-card" href="https://discord.gg/pFzXyVx37p" target="_blank">
+            <div class="icon-box">
+                <svg viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+            </div>
+            <div class="card-info"><div class="name">Community</div><div class="sub">Join for daily links & updates</div></div>
+        </a>
+    </div>
+    <div class="discord-hint">
+        <div class="dot"></div>
+        Join the Discord for daily unblocked links and updates
+    </div>
+</div>
+
+<!-- ARCADE -->
+<div class="page" id="arcadePage">
+    <iframe src="games.html" title="ARVEX ARCADE"></iframe>
+</div>
+
+<!-- MEDIA -->
+<div class="page" id="mediaPage">
+    <iframe src="movies.html" title="ARVEX MEDIA"></iframe>
+</div>
+
+<!-- CHAT -->
+<div class="page" id="chatPage">
+    <div class="coming-soon-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    </div>
+    <div class="coming-soon-title">Coming Soon</div>
+    <div class="coming-soon-sub">We're building something cool</div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="settingsPage">
+    <div class="settings-inner">
+        <div class="settings-header">
+            <button class="back-btn" onclick="goPage(lastPage)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            </button>
+            <h2>Settings</h2>
+        </div>
+
+        <!-- Effects -->
+        <div class="settings-card">
+            <div class="card-label">Effects</div>
+            <div class="setting-row">
+                <div><div class="label-text">Disable Particles</div><div class="sub-text">Turns off the grid animation</div></div>
+                <div class="toggle" id="toggleParticles" onclick="toggleSetting('particles', this)"><div class="knob"></div></div>
+            </div>
+        </div>
+
+        <!-- About:Blank -->
+        <div class="settings-card">
+            <div class="card-label">About:Blank</div>
+            <div class="setting-row">
+                <div><div class="label-text">Media About:Blank</div><div class="sub-text">Opens movies in a clean hidden tab</div></div>
+                <div class="toggle" id="toggleAboutBlank" onclick="toggleSetting('aboutBlank', this)"><div class="knob"></div></div>
+            </div>
+            <button class="action-btn" onclick="openAboutBlank()">
+                <div class="ab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
+                <div><div class="label-text">Open Site in About:Blank</div><div class="ab-sub">Clones the entire site into a hidden tab</div></div>
+            </button>
+        </div>
+
+        <!-- Tab Cloak -->
+        <div class="settings-card">
+            <div class="card-label">Tab Cloak</div>
+            <div class="cloak-grid" id="cloakGrid"></div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.15);margin-top:8px">Changes tab title & icon so it looks like another site</div>
+        </div>
+
+        <!-- Panic -->
+        <div class="settings-card">
+            <div class="card-label">Panic</div>
+            <div class="setting-row">
+                <div><div class="label-text">Panic Key</div><div class="sub-text">Press <code style="background:rgba(255,255,255,0.06);padding:1px 4px;border-radius:3px;font-size:10px">`</code> to instantly go to Google</div></div>
+                <div class="toggle" id="togglePanic" onclick="toggleSetting('panicKey', this)"><div class="knob"></div></div>
+            </div>
+        </div>
+
+        <!-- Reset -->
+        <div class="settings-card">
+            <div class="card-label">Data</div>
+            <button class="reset-btn" onclick="resetAll()">
+                <div class="ab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></div>
+                <div><div class="label-text" style="color:rgba(239,68,68,0.5)">Reset All Data</div><div class="ab-sub">Clears all saved settings</div></div>
+            </button>
+        </div>
+
+        <div class="settings-footer">
+            <span>Arvex Network</span>
+            <span>v1.0</span>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ═══════ GRID BACKGROUND ═══════ */
+(function() {
+    var canvas = document.getElementById('grid');
+    var ctx = canvas.getContext('2d', { alpha: false });
+    var gTime = 0;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var particlesOn = true;
+
+    window._gridParticles = function(on) { particlesOn = on; canvas.style.display = on ? 'block' : 'none'; };
+
+    function resize() {
+        canvas.width = innerWidth * dpr;
+        canvas.height = innerHeight * dpr;
+        canvas.style.width = innerWidth + 'px';
+        canvas.style.height = innerHeight + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function draw() {
+        if (document.hidden) { requestAnimationFrame(draw); return; }
+        var w = innerWidth, h = innerHeight;
+        gTime += 0.012;
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, w, h);
+
+        var horizon = h * 0.38, vx = w / 2;
+        var scroll = (gTime * 0.25) % 1;
+
+        // vertical lines
+        for (var c = -14; c <= 14; c++) {
+            var a = (c / 14) * 0.75;
+            var ex = vx + Math.tan(a) * (w * 0.9);
+            var p = Math.sin(gTime * 0.5 + Math.abs(c) * 0.12) * 0.5 + 0.5;
+            ctx.strokeStyle = 'rgba(255,255,255,' + (0.03 + p * 0.06) + ')';
+            ctx.lineWidth = 0.5 + p * 0.4;
+            ctx.beginPath(); ctx.moveTo(vx, horizon); ctx.lineTo(ex, h + 60); ctx.stroke();
+        }
+
+        // horizontal lines
+        for (var i = 0; i < 30; i++) {
+            var t = ((i / 30 + scroll) % 1); t = t * t;
+            var y = horizon + t * (h - horizon);
+            var al = t * 0.2;
+            ctx.strokeStyle = 'rgba(255,255,255,' + (al + 0.02) + ')';
+            ctx.lineWidth = 0.3 + t * 1.8;
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
+
+        // horizon
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, horizon); ctx.lineTo(w, horizon); ctx.stroke();
+
+        // vanishing point
+        var vp = Math.sin(gTime * 0.8) * 0.5 + 0.5;
+        var g = ctx.createRadialGradient(vx, horizon, 0, vx, horizon, 120);
+        g.addColorStop(0, 'rgba(255,255,255,' + (0.04 + vp * 0.04) + ')');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(vx - 120, horizon - 120, 240, 240);
+
+        requestAnimationFrame(draw);
+    }
+    draw();
+})();
+
+/* ═══════ NAVIGATION ═══════ */
+var lastPage = 'home';
+var currentPage = 'home';
+
+function goPage(page) {
+    if (page === 'settings') lastPage = currentPage;
+    currentPage = page;
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById(page + 'Page').classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.page === page);
+    });
+}
+
+/* ═══════ CLOCK ═══════ */
+function updateClock() {
+    var n = new Date();
+    document.getElementById('clock').textContent = n.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: 'America/New_York' });
+    document.getElementById('date').textContent = n.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/New_York' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ═══════ SETTINGS ═══════ */
+function getSetting(key, def) {
+    try { var v = localStorage.getItem('arvex_' + key); return v !== null ? JSON.parse(v) : def; } catch(e) { return def; }
+}
+function saveSetting(key, val) {
+    try { localStorage.setItem('arvex_' + key, JSON.stringify(val)); } catch(e) {}
+}
+
+// Load settings
+(function() {
+    var particles = getSetting('particles', true);
+    var aboutBlank = getSetting('aboutBlank', true);
+    var panicKey = getSetting('panicKey', false);
+    var cloak = getSetting('cloak', 'none');
+
+    if (!particles) {
+        document.getElementById('toggleParticles').classList.add('on');
+        window._gridParticles(false);
+    }
+    if (aboutBlank) document.getElementById('toggleAboutBlank').classList.add('on');
+    if (panicKey) {
+        document.getElementById('togglePanic').classList.add('on');
+        window.addEventListener('keydown', function(e) { if (e.key === '`') window.location.replace('https://www.google.com'); });
+    }
+    applyCloak(cloak);
+    buildCloakButtons(cloak);
+})();
+
+function toggleSetting(key, el) {
+    var isOn = el.classList.toggle('on');
+    saveSetting(key, isOn);
+    if (key === 'particles') window._gridParticles(!isOn);
+    if (key === 'aboutBlank') saveSetting('aboutBlank', isOn);
+    if (key === 'panicKey') {
+        if (isOn) {
+            window.addEventListener('keydown', panicHandler);
+        } else {
+            window.removeEventListener('keydown', panicHandler);
+        }
+    }
+}
+
+function panicHandler(e) { if (e.key === '`') window.location.replace('https://www.google.com'); }
+
+function openAboutBlank() {
+    var w = window.open('about:blank', '_blank');
+    if (w) {
+        w.document.open();
+        w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Arvex Network</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#000}iframe{width:100%;height:100%;border:none;display:block}</style></head><body><iframe src="' + location.href + '" allowfullscreen></iframe></body></html>');
+        w.document.close();
+    }
+}
+
+function resetAll() {
+    Object.keys(localStorage).filter(function(k) { return k.indexOf('arvex_') === 0; }).forEach(function(k) { localStorage.removeItem(k); });
+    location.reload();
+}
+
+/* ═══════ TAB CLOAK ═══════ */
+var CLOAKS = {
+    none: { title: 'Arvex Network', favicon: 'https://www.image2url.com/r2/default/images/1777323425517-753f9d7a-8b62-4c5a-9798-03d4d0ac122e.png', label: 'Off' },
+    drive: { title: 'My Drive - Google Drive', favicon: 'https://www.google.com/s2/favicons?domain=drive.google.com&sz=32', label: 'Drive' },
+    canvas: { title: 'Dashboard', favicon: 'https://www.google.com/s2/favicons?domain=instructure.com&sz=32', label: 'Canvas' },
+    grades: { title: 'Grades and Attendance', favicon: 'https://www.google.com/s2/favicons?domain=schoolmint.com&sz=32', label: 'Grades' }
+};
+
+function buildCloakButtons(active) {
+    var grid = document.getElementById('cloakGrid');
+    grid.innerHTML = '';
+    Object.keys(CLOAKS).forEach(function(key) {
+        var c = CLOAKS[key];
+        var btn = document.createElement('button');
+        btn.className = 'cloak-btn' + (key === active ? ' active' : '');
+        btn.onclick = function() {
+            saveSetting('cloak', key);
+            applyCloak(key);
+            document.querySelectorAll('.cloak-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+        };
+        if (key !== 'none') {
+            var img = document.createElement('img');
+            img.src = c.favicon;
+            btn.appendChild(img);
+        }
+        btn.appendChild(document.createTextNode(c.label));
+        grid.appendChild(btn);
+    });
+}
+
+function applyCloak(key) {
+    var c = CLOAKS[key];
+    document.title = c.title;
+    var link = document.querySelector("link[rel~='icon']") || document.createElement('link');
+    link.rel = 'icon';
+    link.href = c.favicon;
+    if (!link.parentNode) document.head.appendChild(link);
+}
+</script>
+
+</body>
+</html>
